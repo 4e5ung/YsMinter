@@ -1,18 +1,8 @@
-# kola-pfp-minter
-
-Minter SmartContract
-
-- Polygon WhiteList
-
-- Mumbai WhiteList 
+# YsMinter Contract
 
 
 ## 실행 환경
 npm install
-
-- mumbai cvtx ledger deploy
-
-npx hardhat run .\scripts\deploy-cvtx-ledger.js (deploy) --network mumbai_ledger
 
 
 ## ERROR CODE
