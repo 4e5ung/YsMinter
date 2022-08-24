@@ -1,7 +1,7 @@
 require('dotenv').config();
 require("@nomiclabs/hardhat-waffle");
 require('hardhat-abi-exporter');
-
+require('hardhat-contract-sizer');
 
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -56,10 +56,10 @@ module.exports = {
   mocha: {
     timeout: 300000
   },
-  // abiExporter: {
-  //   path: './abi',
-  //   clear: true,
-  //   flat: true,
-  //   except: ['openzeppelin', './token', "./interfaces", "./access", "./utils"]
-  // },
+  abiExporter: {
+    path: './abi',
+    clear: true,
+    flat: true,
+    except: ['openzeppelin', './token', "./interfaces", "./access", "./utils"]
+  },
 };

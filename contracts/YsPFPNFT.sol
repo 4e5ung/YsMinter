@@ -1,24 +1,45 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './token/ERC721/ERC721.sol';
+
 import './token/ERC721/extensions/ERC721URIStorage.sol';
+import './token/ERC721/extensions/ERC721Enumerable.sol';
 
 import './access/Ownable.sol';
 import "./utils/Counters.sol";
 
-
-contract YsPFPNFT is ERC721, ERC721URIStorage, Ownable{
+contract YsPFPNFT is ERC721URIStorage, ERC721Enumerable, Ownable{
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIdCounter;
+
+    string private _baseTokenURI;
 
     struct NFTINFO{
         string uri;
         uint256 tokenId;
     }
-    receive() external payable {}
     
     constructor() ERC721("TEST NFT", "NFT"){}
+
+    function _baseURI() internal view virtual override returns (string memory) {
+         return _baseTokenURI;
+     }
+
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId)
+        internal
+        override(ERC721, ERC721Enumerable)
+    {
+        super._beforeTokenTransfer(from, to, tokenId);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721Enumerable)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
 
     function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
         super._burn(tokenId);
@@ -28,28 +49,27 @@ contract YsPFPNFT is ERC721, ERC721URIStorage, Ownable{
         return super.tokenURI(tokenId);
     }
 
-    function mintWithTokenURI(address to, string memory uri) public{
-
-        (bool sent,) = address(to).call{value: 1*(10**17)}("");
-        require(sent, "Failed dripping ETH");
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
-        _safeMint(to, tokenId);
-        _setTokenURI(tokenId, uri);
+    function setBaseURI(string memory _uri) external onlyOwner{
+        _baseTokenURI = _uri;
     }
 
-    function preNMint( uint mintCount, bytes memory uri) public onlyOwner{
-        (string[] memory uriList ) = abi.decode(uri, (string[]));
+    function mintWithTokenURI(address to) external onlyOwner{
+        uint256 tokenId = _tokenIdCounter.current();
+        _safeMint(to, tokenId);
+        _setTokenURI(tokenId, string(abi.encodePacked(_baseURI(), Strings.toString(tokenId), ".json")));
+        _tokenIdCounter.increment();
+    }
 
+    function preNMint(address to, uint mintCount) external onlyOwner{
         for( uint256 i = 0; i < mintCount; i++ ){
             uint256 tokenId = _tokenIdCounter.current();
+            _safeMint(to, tokenId);
+            _setTokenURI(tokenId, string(abi.encodePacked(_baseURI(), Strings.toString(tokenId), ".json")));
             _tokenIdCounter.increment();
-            _safeMint(msg.sender, tokenId);
-            _setTokenURI(tokenId, uriList[i]);            
         }
     }
 
-    function tokensURI() public view returns (NFTINFO[] memory list){
+    function tokensURI() external view returns (NFTINFO[] memory list){
         require( balanceOf(msg.sender) > 0, "ZERO_TOKEN");
 
         NFTINFO[] memory uriList = new NFTINFO[](balanceOf(msg.sender));

@@ -8,7 +8,9 @@ const { Bignumber } = require("ethers");
 describe("Minter", function () {
 
     let accounts;
+    let tokenContract;
     let minterContract;
+    let nftContract;
     const MaxUint256 = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
 
     const overrides = {
@@ -19,8 +21,11 @@ describe("Minter", function () {
     beforeEach(async function () { 
         accounts = await ethers.getSigners();
 
-        minterContract = await (await ethers.getContractFactory("Minter")).deploy(accounts[0].address);
+        tokenContract = await (await ethers.getContractFactory("ERC20Token")).deploy();
+        nftContract = await (await ethers.getContractFactory("YsPFPNFT")).deploy();
+        minterContract = await (await ethers.getContractFactory("Minter")).deploy(accounts[0].address, accounts[0].address, tokenContract.address, nftContract.address);
 
+        // 임의 화이트리스트 등록
         let accountsInfo = [
             [accounts[0].address, 1],
             [accounts[1].address, 2],
@@ -28,12 +33,71 @@ describe("Minter", function () {
             [accounts[3].address, 3]
         ]
 
-        const abiCoder = ethers.utils.defaultAbiCoder;
+        let abiCoder = ethers.utils.defaultAbiCoder;
         const encodeAccountsInfo = abiCoder.encode(["tuple(address, uint256)[]"], [accountsInfo]);
 
         tx = await minterContract.addWhitelist(encodeAccountsInfo, overrides);
         tx.wait();
+
+        // 임의 민팅 및 권한 허용
+        await nftContract.preNMint(accounts[0].address, 200);
+        await nftContract.setApprovalForAll(minterContract.address, true);
+
+        // 민팅 옵션 설정
+        // uint8   mintIndex;
+        // uint256 buyCoinAmount;
+        // uint256 buyTokenAmount;
+        // uint256 buyMaxCount;
+        // uint256 policyType;
+        // uint256 nftAmount;
+        // uint256 startTime;
+        // uint256 endTime;
+        let mintInfo = [
+            [1, 500, 0, 2, 0, 1, Math.floor(Date.now()/1000), Math.floor(Date.now() / 1000)+3600],
+            [2, 1000, 0, 2, 1, 5, Math.floor(Date.now()/1000), Math.floor(Date.now() / 1000)+3600],
+            [3, 1500, 0, 2, 1, 10, Math.floor(Date.now()/1000)+7200, Math.floor(Date.now() / 1000)+(3600*3)]
+        ]
+
+        abiCoder = ethers.utils.defaultAbiCoder;
+        const encodeMintInfo = abiCoder.encode(["tuple(uint8,uint256,uint256,uint256,uint256,uint256,uint256,uint256)[]"], [mintInfo]); 
+
+        tx = await minterContract.setMintInfo(encodeMintInfo, overrides);
+        tx.wait();
     });
+
+    it("setMintInfo, 민팅정보 입력", async function(){        
+        // uint8   mintIndex;
+        // uint256 buyCoinAmount;
+        // uint256 buyTokenAmount;
+        // uint256 buyMaxCount;
+        // uint256 policyType;
+        // uint256 nftAmount;
+        // uint256 startTime;
+        // uint256 endTime;
+        let mintInfo = [
+            [1, 500, 0, 2, 1, 2000, Math.floor(Date.now()/1000), Math.floor(Date.now() / 1000)+3600],
+            [2, 1000, 0, 2, 1, 4000, Math.floor(Date.now()/1000), Math.floor(Date.now() / 1000)+3600],
+            [3, 1500, 0, 2, 1, 6000, Math.floor(Date.now()/1000), Math.floor(Date.now() / 1000)+3600]
+        ]
+
+        const abiCoder = ethers.utils.defaultAbiCoder;
+        const encodeMintInfo = abiCoder.encode(["tuple(uint8,uint256,uint256,uint256,uint256,uint256,uint256,uint256)[]"], [mintInfo]); 
+
+        tx = await minterContract.setMintInfo(encodeMintInfo, overrides);
+        tx.wait();
+    })
+
+    it("getMintInfo, 민팅정보 확인", async function(){        
+        mintInfo = await minterContract.getMintInfo(1, overrides);
+        // console.log(mintInfo);
+    })
+
+    it("setAddress, 주소 정보 변경", async function(){        
+        await minterContract.setAddress(accounts[1].address, accounts[1].address, nftContract.address, nftContract.address);     
+        
+        await expect(minterContract.setAddress(accounts[1].address, accounts[1].address, nftContract.address, nftContract.address))
+        .to.be.revertedWith("Minter: E01")        
+    })
 
     it("addWhitelist, 화이트 리스트 추가(복수가능)", async function(){
         
@@ -91,30 +155,5 @@ describe("Minter", function () {
         assert.equal(whitelist.length, 4);
     })
 
-    it.only("setMintInfo, 민팅정보 입력", async function(){        
-        // uint8   mintIndex;
-        // uint256 buyCoinAmount;
-        // uint256 buyTokenAmount;
-        // uint256 buyMaxCount;
-        // uint256 policyType;
-        // uint256 nftAmount;
-        // uint256 startTime;
-        // uint256 endTime;
-
-        let mintInfo = [
-            [1, 500, 0, 2, 1, 2000, Math.floor(Date.now()/1000), Math.floor(Date.now() / 1000)+3600],
-            [2, 1000, 0, 2, 1, 4000, Math.floor(Date.now()/1000), Math.floor(Date.now() / 1000)+3600],
-            [3, 1500, 0, 2, 1, 6000, Math.floor(Date.now()/1000), Math.floor(Date.now() / 1000)+3600]
-        ]
-
-        const abiCoder = ethers.utils.defaultAbiCoder;
-        const encodeMintInfo = abiCoder.encode(["tuple(uint8,uint256,uint256,uint256,uint256,uint256,uint256,uint256)[]"], [mintInfo]); 
-
-        tx = await minterContract.setMintInfo(encodeMintInfo, overrides);
-        tx.wait();
-
-        result = await minterContract.getMintInfo(1, overrides);
-        console.log(result)
-    })
-
+    
 });

@@ -1,12 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-contract Minter{
+import './token/ERC721/extensions/IERC721Enumerable.sol';
+import './token/ERC721/IERC721.sol';
+import './token/ERC20/IERC20.sol';
 
+import "./utils/Counters.sol";
+
+contract Minter{
+    using Counters for Counters.Counter;
+    Counters.Counter private _tokenIdCounter;
 
     address private admin;
+    address private tokenOwner;
+    address private token;
+    address private nftContract;
+    
     address[] private whiteList;
 
+
+    mapping(address=>mapping(uint256=>uint256)) mintAccount;
     mapping(address=>uint256) whiteMap;
     mapping(uint8=>MintInfo) mintInfo;
 
@@ -30,6 +43,7 @@ contract Minter{
         uint256 policyType;
     }
 
+
     struct MintInfo{
         uint8   mintIndex;
         uint256 buyCoinAmount;
@@ -41,8 +55,11 @@ contract Minter{
         uint256 endTime;
     }
 
-    constructor(address _admin) {
+    constructor(address _admin, address _tokenOwner, address _token, address _nftContract) {
         admin = _admin;
+        tokenOwner = _tokenOwner;
+        token = _token;
+        nftContract = _nftContract;
 	}
 
     receive() external payable {
@@ -61,46 +78,56 @@ contract Minter{
         }
     }
 
-    function getMintInfo(uint8 mintIndex) external view returns (MintInfo memory _mintInfo){
-        require(mintInfo[mintIndex].mintIndex != 0, "Minter: E0X");
+    function getMintInfo(uint8 mintIndex) external view returns (MintInfo memory _mintInfo, uint256 _totalBalance, uint256 _currentBalance){
+        require(mintInfo[mintIndex].mintIndex != 0, "Minter: E04");
         _mintInfo = mintInfo[mintIndex];
+        _totalBalance = IERC721Enumerable(nftContract).totalSupply();
+        _currentBalance = _tokenIdCounter.current();
     }
 
     function setMint(uint8 mintIndex, uint8 mintCount, uint8 buyType) external payable{
         // 설정된 차수 존재하는지 확인
-        require(mintInfo[mintIndex].mintIndex != 0, "1");
+        require(mintInfo[mintIndex].mintIndex != 0, "Minter: E04");
 
         // 지정된 차수에 대해 시간 체크
         uint256 _currentTime = block.timestamp;
-        require(mintInfo[mintIndex].startTime <= _currentTime, "");
-        require(mintInfo[mintIndex].endTime > _currentTime, "");
+        require((mintInfo[mintIndex].startTime <= _currentTime) && (mintInfo[mintIndex].endTime > _currentTime), "Minter: E05");
+
+        // 최소, 최대 구매 개수
+        require( (0 < mintCount) && (mintInfo[mintIndex].buyMaxCount >= mintCount), "Minter: E06");
 
         // 전체 발행량 대비 현재 발행량 체크
-
+        uint tokenId = _tokenIdCounter.current();
+        require(mintInfo[mintIndex].nftAmount >= (tokenId+mintCount), "Minter: E07");
 
         // whitelist라면 권한 체크
         if( mintInfo[mintIndex].policyType == uint8(PolicyType.OGWhiteList) ){
-            require(whiteMap[msg.sender] != 0, "");
+            require(whiteMap[msg.sender] != 0, "Minter: E08");
         }
         
-        // 최대 구매 개수 및 현재 구매한 개수 확인
-        require(mintInfo[mintIndex].buyMaxCount >= mintCount, "");
-
-
+        // 현재 구매한 개수 확인
+        require(mintInfo[mintIndex].buyMaxCount >= (mintAccount[msg.sender][mintIndex]+mintCount), "Minter: E09");
 
         // 구매 금액 확인
         if( buyType == uint8(BuyType.Coin) ){
-            require((mintInfo[mintIndex].buyCoinAmount*mintCount) == msg.value, "");
+            uint amount = mintInfo[mintIndex].buyCoinAmount*(10**18);
+            require((amount > 0) && ((amount*mintCount) == msg.value), "Minter: E10");
         }
 
-        // 토큰 밸런스 확인        
+        // 토큰 금액 확인 및 전송
         if( buyType == uint8(BuyType.Token) ){
-            // require((mintInfo[mintIndex].buyCoinAmount*mintCount) == msg.value, "");
+            uint256 amount = mintInfo[mintIndex].buyCoinAmount*mintCount*(10**18);
+            require((amount > 0) && (IERC20(token).balanceOf(msg.sender) >= amount*mintCount), "Minter: E11");
+            IERC20(token).transferFrom(msg.sender, address(this), amount*mintCount);
         }
         
-        // 금액 전송
-
         // Mint 진행(transfer)
+        for( uint256 i=0 ; i < mintCount; i++ ){
+            IERC721(nftContract).transferFrom(address(tokenOwner), msg.sender, tokenId);
+            _tokenIdCounter.increment();
+            tokenId = _tokenIdCounter.current();
+            mintAccount[msg.sender][mintIndex]++;
+        }
     }
 
     function addWhitelist(bytes memory _list) external onlyAdmin{
@@ -159,5 +186,12 @@ contract Minter{
             info[i].account = whiteList[i];
             info[i].policyType = whiteMap[whiteList[i]];
         }
+    }
+
+    function setAddress(address _admin, address _tokenOwner, address _token, address _nftContract) external onlyAdmin{
+        admin = _admin;
+        tokenOwner = _tokenOwner;
+        token = _token;
+        nftContract = _nftContract;
     }
 }
