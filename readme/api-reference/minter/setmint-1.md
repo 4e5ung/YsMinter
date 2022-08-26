@@ -1,7 +1,7 @@
 # 🔒 setMintInfo
 
-function setMintInfo( \
-&#x20;   bytes \_mintInfo\
+function setMintInfo(\
+bytes \_mintInfo\
 )
 
 \
@@ -50,5 +50,3 @@ function setMintInfo( \
     
 ```
 
-\
-2022.08.26

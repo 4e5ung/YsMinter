@@ -5,8 +5,7 @@ function getWhitelist(\
 
 \
 등록 된 화이트리스트 계정 정보 보기\
-\
-
+\\
 
 **Return Values**
 
@@ -49,5 +48,3 @@ struct WhiteListInfo{
     ]
 ```
 
-\
-2022.08.26

@@ -1,7 +1,7 @@
 # 🔒 removeWhitelist
 
-function removeWhitelist( \
-&#x20;   bytes \_accounts\
+function removeWhitelist(\
+bytes \_accounts\
 )
 
 \
@@ -37,5 +37,3 @@ function removeWhitelist( \
     
 ```
 
-\
-2022.08.26

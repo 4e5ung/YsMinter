@@ -1,7 +1,7 @@
 # isWhitelist
 
-function isWhitelist( \
-&#x20;   address \_account\
+function isWhitelist(\
+address \_account\
 )external returns(uint256 policyType)
 
 \
@@ -10,11 +10,9 @@ function isWhitelist( \
 \
 **Parameters**
 
-| Type    | Value     | Explain     |
-| ------- | --------- | ----------- |
-| address | \_account | 확인 할 계정 주소  |
-
-
+| Type    | Value     | Explain    |
+| ------- | --------- | ---------- |
+| address | \_account | 확인 할 계정 주소 |
 
 **Return Values**
 
@@ -33,5 +31,3 @@ function isWhitelist( \
     BigNumber { value: "1" }
 ```
 
-\
-2022.08.25

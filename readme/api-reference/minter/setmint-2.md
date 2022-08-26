@@ -1,10 +1,10 @@
 # 🔒 setAddress
 
-function setAddress( \
-&#x20;   address \_admin, \
-&#x20;   address \_tokenOwner, \
-&#x20;   address \_token, \
-&#x20;   address \_nftContract\
+function setAddress(\
+address \_admin,\
+address \_tokenOwner,\
+address \_token,\
+address \_nftContract\
 )
 
 \
@@ -20,8 +20,6 @@ function setAddress( \
 | address | \_token       | ERC20 토큰 컨트랙트 주소       |
 | address | \_nftContract | ERC721 NFT 컨트랙트 주소     |
 
-
-
 \
 **Example**
 
@@ -35,5 +33,3 @@ function setAddress( \
     
 ```
 
-\
-2022.08.26

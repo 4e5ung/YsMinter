@@ -1,9 +1,9 @@
 # setMint
 
-function setMint( \
-&#x20;   uint8 mintIndex,\
-&#x20;   uint8 mintCount,\
-&#x20;   uint8 buyType\
+function setMint(\
+uint8 mintIndex,\
+uint8 mintCount,\
+uint8 buyType\
 )external
 
 \
@@ -18,8 +18,6 @@ function setMint( \
 | uint8 | mintCount | 민팅 개수                          |
 | uint8 | buyType   | <p>구매 형태<br>(코인: 1, 토큰: 2)</p> |
 
-
-
 \
 **Example**
 
@@ -29,5 +27,3 @@ function setMint( \
     
 ```
 
-\
-2022.08.25

@@ -5,8 +5,7 @@ function getMintInfo(\
 
 \
 민팅 정보 얻기\
-\
-
+\\
 
 **Return Values**
 
@@ -72,5 +71,3 @@ struct MintInfo{
   _currentBalance: BigNumber { value: "0" }
 ```
 
-\
-2022.08.25

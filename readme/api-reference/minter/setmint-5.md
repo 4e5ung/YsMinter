@@ -14,5 +14,3 @@ function removeAllWhitelist()
     
 ```
 
-\
-2022.08.26

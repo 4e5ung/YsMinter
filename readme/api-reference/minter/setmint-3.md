@@ -1,7 +1,7 @@
 # 🔒 addWhitelist
 
-function addWhitelist( \
-&#x20;   bytes \_list\
+function addWhitelist(\
+bytes \_list\
 )
 
 \
@@ -37,5 +37,3 @@ function addWhitelist( \
     
 ```
 
-\
-2022.08.26
