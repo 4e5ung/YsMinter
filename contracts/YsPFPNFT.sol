@@ -14,16 +14,16 @@ contract YsPFPNFT is ERC721URIStorage, ERC721Enumerable, Ownable{
 
     string private _baseTokenURI;
 
+    address burnAccount;
+
     struct NFTINFO{
         string uri;
         uint256 tokenId;
     }
     
-    constructor() ERC721("TEST NFT", "NFT"){}
-
-    function _baseURI() internal view virtual override returns (string memory) {
-         return _baseTokenURI;
-     }
+    constructor(address _burnAccount) ERC721("TEST NFT", "NFT"){
+        burnAccount = _burnAccount;
+    }
 
     function _beforeTokenTransfer(address from, address to, uint256 tokenId)
         internal
@@ -45,6 +45,15 @@ contract YsPFPNFT is ERC721URIStorage, ERC721Enumerable, Ownable{
         super._burn(tokenId);
     }
 
+    function setAddress(address _burnAccount) external onlyOwner{
+        burnAccount = _burnAccount;
+    }
+
+    function burn(uint256 tokenId) external{
+        require(msg.sender == burnAccount, "YsPFPNFT: E02");
+        _burn(tokenId);
+    }
+
     function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory){
         return super.tokenURI(tokenId);
     }
@@ -56,7 +65,7 @@ contract YsPFPNFT is ERC721URIStorage, ERC721Enumerable, Ownable{
     function mintWithTokenURI(address to) external onlyOwner{
         uint256 tokenId = _tokenIdCounter.current();
         _safeMint(to, tokenId);
-        _setTokenURI(tokenId, string(abi.encodePacked(_baseURI(), Strings.toString(tokenId), ".json")));
+        _setTokenURI(tokenId, string(abi.encodePacked(_baseTokenURI, Strings.toString(tokenId), ".json")));
         _tokenIdCounter.increment();
     }
 
@@ -64,13 +73,13 @@ contract YsPFPNFT is ERC721URIStorage, ERC721Enumerable, Ownable{
         for( uint256 i = 0; i < mintCount; i++ ){
             uint256 tokenId = _tokenIdCounter.current();
             _safeMint(to, tokenId);
-            _setTokenURI(tokenId, string(abi.encodePacked(_baseURI(), Strings.toString(tokenId), ".json")));
+            _setTokenURI(tokenId, string(abi.encodePacked(_baseTokenURI, Strings.toString(tokenId), ".json")));
             _tokenIdCounter.increment();
         }
     }
 
     function tokensURI() external view returns (NFTINFO[] memory list){
-        require( balanceOf(msg.sender) > 0, "ZERO_TOKEN");
+        require( balanceOf(msg.sender) > 0, "YsPFPNFT: E01");
 
         NFTINFO[] memory uriList = new NFTINFO[](balanceOf(msg.sender));
 
