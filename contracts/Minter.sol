@@ -4,7 +4,6 @@ pragma solidity ^0.8.13;
 import './token/ERC721/extensions/IERC721Enumerable.sol';
 import './token/ERC721/IERC721.sol';
 import './token/ERC20/IERC20.sol';
-
 import "./utils/Counters.sol";
 
 contract Minter{
@@ -18,12 +17,15 @@ contract Minter{
     
     address[] private whiteList;
 
+    uint8 private totalIndex;
+
 
     mapping(address=>mapping(uint256=>uint256)) mintAccount;
     mapping(address=>uint256) whiteMap;
     mapping(uint8=>MintInfo) mintInfo;
 
 
+    event mint(address, uint256);
     event addList(address, uint256);
     event removeList(address);
     event removeAllList();
@@ -71,16 +73,24 @@ contract Minter{
     }
 
     function setMintInfo(bytes memory _mintInfo) external onlyAdmin{
-        (MintInfo[] memory mintInfos ) = abi.decode(_mintInfo, (MintInfo[]));
+        (MintInfo[] memory info ) = abi.decode(_mintInfo, (MintInfo[]));
 
-        for( uint256 i = 0; i < mintInfos.length; i++ ){            
-            mintInfo[mintInfos[i].mintIndex] = mintInfos[i];
+        for( uint256 i = 0; i < info.length; i++ ){        
+            mintInfo[info[i].mintIndex] = info[i];
         }
+
+        totalIndex = uint8(info.length);
     }
 
-    function getMintInfo(uint8 mintIndex) external view returns (MintInfo memory _mintInfo, uint256 _totalBalance, uint256 _currentBalance){
-        require(mintInfo[mintIndex].mintIndex != 0, "Minter: E04");
-        _mintInfo = mintInfo[mintIndex];
+    function getMintInfo() external view returns (MintInfo[] memory _mintInfo, uint256 _totalBalance, uint256 _currentBalance){
+        require(totalIndex != 0, "Minter: E12");
+
+        _mintInfo = new MintInfo[](totalIndex);
+
+        for(uint8 i = 0; i < totalIndex; i++){
+            _mintInfo[i] = mintInfo[i+1];
+        }
+
         _totalBalance = IERC721Enumerable(nftContract).totalSupply();
         _currentBalance = _tokenIdCounter.current();
     }
@@ -98,7 +108,13 @@ contract Minter{
 
         // 전체 발행량 대비 현재 발행량 체크
         uint tokenId = _tokenIdCounter.current();
-        require(mintInfo[mintIndex].nftAmount >= (tokenId+mintCount), "Minter: E07");
+        uint accumulateAmount;
+
+        for(uint8 i = 1; i <= mintIndex; i++){
+            accumulateAmount += mintInfo[i].nftAmount;
+        }
+
+        require(accumulateAmount >= (tokenId+mintCount), "Minter: E07");
 
         // whitelist라면 권한 체크
         if( mintInfo[mintIndex].policyType == uint8(PolicyType.OGWhiteList) ){
@@ -124,6 +140,8 @@ contract Minter{
         // Mint 진행(transfer)
         for( uint256 i=0 ; i < mintCount; i++ ){
             IERC721(nftContract).transferFrom(address(tokenOwner), msg.sender, tokenId);
+            emit mint(msg.sender, tokenId);
+
             _tokenIdCounter.increment();
             tokenId = _tokenIdCounter.current();
             mintAccount[msg.sender][mintIndex]++;
