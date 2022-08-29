@@ -24,6 +24,11 @@ module.exports = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {
+      chainId:8559,
+    },
+    local: {
+      url:"http://192.168.0.227:8559",
+      chainId:8559,
     },
     mumbai: {
       url: "https://matic-mumbai.chainstacklabs.com",
