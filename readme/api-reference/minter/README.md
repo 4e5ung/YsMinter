@@ -25,4 +25,5 @@ View the **Minter** contract on:
 | `Minter: E09` | 민팅 구매 개수 초과            |
 | `Minter: E10` | 올바르지 \*\*\*\* 않은 코인 금액 |
 | `Minter: E11` | 올바르지 않은 토큰 금액          |
+| `Minter: E12` | 민팅 정보 없음               |
 
